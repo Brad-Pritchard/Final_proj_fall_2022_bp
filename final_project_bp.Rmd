@@ -1,0 +1,753 @@
+---
+title: "Final Project"
+author: "B. Pritchard"
+date: "2022-11-23"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+The purpose of this R program is to recreate and evaluate a couple of the key results and tables from the paper "The empirical relationship between nonstandard economic behaviors" by Mark Dean and Pietro Ortoleva, the paper, data set, and supporting documents are located at: https://www.pnas.org/doi/full/10.1073/pnas.1821353116
+
+```{r}
+library(knitr)
+library(formatR)
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=120),tidy='styler')
+```
+
+
+#### Opening packages and reading in the data
+```{r}
+library(tidyverse)
+library(ivreg)
+library(gt)
+library(gtsummary)
+library(data.table)
+library(corrr)
+library(describedata)
+library(psych)
+
+df <- read.csv("C:/Users/bradl/OneDrive/Desktop/Fall_2022/Linear_Reg_Analysis/Data_LRA/pnas.1821353116.sd01.csv")
+#View(df)
+#names(df)
+dim(df)
+```
+
+
+#### Table 1 features selection and descriptive statistics
+```{r}
+tab_1_feats <- df %>% select("discount_rate_pcf",
+                             "present_discount_rate_pcf",
+                             "risk_pcf",
+                             "allais_pcf",
+                             "common_l_pcf",
+                             "uncertainty_pcf",
+                             "compound_pcf",
+                             "m_risk",
+                             "b_risk_pcf",
+                             "trust",
+                             "return",
+                             "raven_total",
+                             "overconfidence_1",
+                             "overconfidence_2",
+                             "gender",
+                             "anxiety",
+                             "depression")
+#str(tab_1_feats)
+
+# Function that gathers various descriptive statistics
+get_descriptive_stats <- function(data){
+                                
+  summary_data <- summary(na.omit(data)) # summarize data
+  sd_data <- sd(na.omit(data)) # standard deviation of data
+  var_data <- var(na.omit(data)) # variance of data
+  iqr_data <- IQR(na.omit(data)) # inter quartile range of data
+  descriptive_stats <- c(summary_data,
+                         "Standard Deviation" = sd_data,
+                         "Variance" = var_data,
+                         "IQR" = iqr_data) # combine descriptive stats and
+                                           # label each statistic accordingly
+  return(round(descriptive_stats, digits = 4))
+
+}
+
+desc_stats_t1 <- apply(tab_1_feats, 2, get_descriptive_stats) %>%
+  data.table(keep.rownames = TRUE)
+print(desc_stats_t1)
+```
+
+#### Setting up correlation matrix for Table 1
+```{r}
+stats_tab1 <- corr.test(tab_1_feats,
+                        use = "pairwise",
+                        method = "pearson",
+                        adjust = "none",
+                        alpha = 0.01)
+
+stats_tab2 <- corr.test(tab_1_feats,
+                        use = "pairwise",
+                        method = "pearson",
+                        adjust = "none",
+                        alpha = 0.01)
+
+stats_tab3 <- round(stats_tab2$r, digits = 2)
+stats_tab3[upper.tri(stats_tab3, diag = FALSE)] <- " "
+
+cor_mat_tab1 <- data.table(stats_tab3, keep.rownames = TRUE)
+
+cor_mat_tab1 <- as.data.frame(cor_mat_tab1)
+
+rows <- nrow(cor_mat_tab1)
+
+cor_mat_tab1[rows + 16, ] <- NA
+
+t_stats_tab1 <- data.table(round(stats_tab1$t,
+                                 digits = 2),
+                           keep.rownames = TRUE)
+```
+
+Adding the t-statistics to the Table 1 correlation matrix
+```{r}
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 18L:33L,
+                        j = 2L,
+                        value = t_stats_tab1[2:17, 2])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 18L,
+                        j = 3L,
+                        value = NA)
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 19L,
+                        j = 3L,
+                        value = t_stats_tab1[3, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 20L,
+                        j = 3L,
+                  value = t_stats_tab1[4, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 21L,
+                        j = 3L,
+                        value = t_stats_tab1[5, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 22L,
+                        j = 3L,
+                        value = t_stats_tab1[6, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 23L,
+                        j = 3L,
+                        value = t_stats_tab1[7, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 24L,
+                        j = 3L,
+                        value = t_stats_tab1[8, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 25L,
+                        j = 3L,
+                        value = t_stats_tab1[9, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 26L,
+                        j = 3L,
+                        value = t_stats_tab1[10, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 27L,
+                        j = 3L,
+                        value = t_stats_tab1[11, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 28L,
+                        j = 3L,
+                        value = t_stats_tab1[12, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 29L,
+                        j = 3L,
+                        value = t_stats_tab1[13, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 30L,
+                        j = 3L,
+                        value = t_stats_tab1[14, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 31L,
+                        j = 3L,
+                        value = t_stats_tab1[15, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 32L,
+                        j = 3L,
+                        value = t_stats_tab1[16, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 33L,
+                        j = 3L,
+                        value = t_stats_tab1[17, 3])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 20L:33L,
+                        j = 4L,
+                        value = t_stats_tab1[4:17, 4])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 21L:33L,
+                        j = 5L,
+                        value = t_stats_tab1[5:17, 5])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 22L:33L,
+                        j = 6L,
+                        value = t_stats_tab1[6:17, 6])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 23L:33L,
+                        j = 7L,
+                        value = t_stats_tab1[7:17, 7])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 24L:33L,
+                        j = 8L,
+                        value = t_stats_tab1[8:17, 8])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 25L:33L,
+                        j = 9L,
+                        value = t_stats_tab1[9:17, 9])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 26L:33L,
+                        j = 10L,
+                        value = t_stats_tab1[10:17, 10])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 27L:33L,
+                        j = 11L,
+                        value = t_stats_tab1[11:17, 11])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 28L:33L,
+                        j = 12L,
+                        value = t_stats_tab1[12:17, 12])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 29L:33L,
+                        j = 13L,
+                        value = t_stats_tab1[13:17, 13])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 30L:33L,
+                        j = 14L,
+                        value = t_stats_tab1[14:17, 14])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 31L:33L,
+                        j = 15L,
+                        value = t_stats_tab1[15:17, 15])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 32L:33L,
+                        j = 16L,
+                        value = t_stats_tab1[16:17, 16])
+cor_mat_tab1_v2 <- set(cor_mat_tab1,
+                        i = 33L:33L,
+                        j = 17L,
+                        value = t_stats_tab1[17, 17])
+```
+
+
+#### Table 1 Creation
+```{r}
+tru_order <- c(1, 2, 18, 3, 19, 4, 20, 5, 21, 6,
+               22, 7, 23, 8, 24, 9, 25, 10, 26, 11,
+               27, 12, 28, 13, 29, 14, 30, 15, 31,
+               16, 32, 17, 33)
+
+setroworder <- function(x, neworder) {
+    .Call(data.table:::Creorder, x, as.integer(neworder), PACKAGE = "data.table")
+    invisible(x)
+}
+# from: https://stackoverflow.com/questions/37878620/reorder-rows-in-data-table-in-a-specific-order
+
+setroworder(cor_mat_tab1_v2, tru_order)
+
+cor_mat_tab1_v2 <- cor_mat_tab1_v2[, -c(1)]
+class(cor_mat_tab1_v2)
+
+names(cor_mat_tab1_v2) <- c("Discount ",
+                            "Present discount",
+                            "Risk aversion",
+                            "C. consequence",
+                            "C. ratio",
+                            "Uncertainty",
+                            "Compound",
+                            "Mixed Risk",
+                            "Buy Risk",
+                            "Send",
+                            "Return",
+                            "Intelligence",
+                            "Overconf.",
+                            "Overplace",
+                            "Gender",
+                            "Anxiety",
+                            "Depression")
+
+row.names(cor_mat_tab1_v2) <- c("Discount",
+                                "Present discount",
+                                " ",
+                                "Risk aversion",
+                                "  ",
+                                "C. consequence",
+                                "   ",
+                                "C. ratio",
+                                "    ",
+                                "Uncertainty At.",
+                                "     ",
+                                "Compound At.",
+                                "      ",
+                                "Mixed Risk",
+                                "       ",
+                                "Buy Risk",
+                                "        ",
+                                "Trust-send",
+                                "         ",
+                                "Trust-return",
+                                "          ",
+                                "Intelligence",
+                                "           ",
+                                "Overconfidence",
+                                "            ",
+                                "Overplacement",
+                                "             ",
+                                "Gender",
+                                "              ",
+                                "Anxiety",
+                                "                ",
+                                "Depression",
+                                "                 ")
+cor_mat_tab1_v2[is.na(cor_mat_tab1_v2)] <- " "
+
+cor_mat_tab1_v2[3, 1] <- paste0(format(unlist(cor_mat_tab1_v2[3, 1])), "***")
+cor_mat_tab1_v2[5, 2] <- paste0(format(unlist(cor_mat_tab1_v2[5, 2])), "***")
+cor_mat_tab1_v2[7, 3] <- paste0(format(unlist(cor_mat_tab1_v2[7, 3])), "***")
+cor_mat_tab1_v2[9, 3] <- paste0(format(unlist(cor_mat_tab1_v2[9, 3])), "*")
+cor_mat_tab1_v2[9, 4] <- paste0(format(unlist(cor_mat_tab1_v2[9, 4])), "***")
+cor_mat_tab1_v2[11, c(1, 2, 4)] <- paste0(format(unlist(cor_mat_tab1_v2[11,
+                                                          c(1, 2, 4)])), "*")
+cor_mat_tab1_v2[11, 3] <- paste0(format(unlist(cor_mat_tab1_v2[11, 3])), "***")
+cor_mat_tab1_v2[11, 5] <- paste0(format(unlist(cor_mat_tab1_v2[11, 5])), "**")
+cor_mat_tab1_v2[13, c(1, 2, 5)] <- paste0(format(unlist(cor_mat_tab1_v2[13,
+                                                          c(1, 2, 5)])), "*")
+cor_mat_tab1_v2[13, c(3, 6)] <- paste0(format(unlist(cor_mat_tab1_v2[13,
+                                                          c(3, 6)])), "***")
+cor_mat_tab1_v2[13, 4] <- paste0(format(unlist(cor_mat_tab1_v2[13, 4])), "**")
+cor_mat_tab1_v2[15, 5] <- paste0(format(unlist(cor_mat_tab1_v2[15, 5])), "**")
+cor_mat_tab1_v2[15, c(2, 3, 5)] <- paste0(format(unlist(cor_mat_tab1_v2[15,
+                                                          c(2, 3, 5)])), "**")
+cor_mat_tab1_v2[15, c(4, 7)] <- paste0(format(unlist(cor_mat_tab1_v2[15,
+                                                             c(4, 7)])), "*")
+cor_mat_tab1_v2[17, c(2, 4, 5)] <- paste0(format(unlist(cor_mat_tab1_v2[17,
+                                                          c(2, 4, 5)])), "*")
+cor_mat_tab1_v2[17, c(3, 7, 8)] <- paste0(format(unlist(cor_mat_tab1_v2[17,
+                                                        c(3, 7, 8)])), "***")
+cor_mat_tab1_v2[17, 6] <- paste0(format(unlist(cor_mat_tab1_v2[17, 6])), "**")
+cor_mat_tab1_v2[21, 8] <- paste0(format(unlist(cor_mat_tab1_v2[21, 8])), "**")
+cor_mat_tab1_v2[21, 10] <- paste0(format(unlist(cor_mat_tab1_v2[21, 10])),
+                                                                        "***")
+cor_mat_tab1_v2[23, 1] <- paste0(format(unlist(cor_mat_tab1_v2[23, 1])), "**")
+cor_mat_tab1_v2[23, 9] <- paste0(format(unlist(cor_mat_tab1_v2[23, 9])), "*")
+cor_mat_tab1_v2[27, c(1, 4, 6)] <- paste0(format(unlist(cor_mat_tab1_v2[27,
+                                                           c(1, 4, 6)])), "*")
+cor_mat_tab1_v2[27, c(8, 9)] <- paste0(format(unlist(cor_mat_tab1_v2[27,
+                                                             c(8, 9)])), "***")
+cor_mat_tab1_v2[29, c(8, 9)] <- paste0(format(unlist(cor_mat_tab1_v2[29,
+                                                             c(8, 9)])), "***")
+
+tab1_gt <- gt(cor_mat_tab1_v2,
+              rownames_to_stub = TRUE,
+              auto_align = "FALSE")
+tab1_gt <- tab1_gt %>% 
+  tab_header(title = md("**Table 1. Correlation between behaviors**")) %>%
+  opt_align_table_header(align = c("left")) %>%
+  cols_hide(columns = c("Intelligence",
+                        "Overconf.",
+                        "Overplace",
+                        "Gender",
+                        "Anxiety",
+                        "Depression")) %>%
+  tab_source_note(source_note = ("*, significant at the 0.05 level; **, significant at the 0.01 level; ***, significant at the 0.001 level (uncorrected for multiple comparisons). In each row, top cell shows correlation coefficient between row and column variable. Bottom cell shows associated t statistic. Gender coded 0 = male, 1 = female. C., Common; at., attitude."))
+
+tab1_gt
+
+tab1_gt %>% gtsave(filename = "tab1_gt_fall_2022.html")
+```
+
+
+#### Table 4 2SLS Regressions
+```{r}
+relevant_dat <- df %>% select("end_new_pcf", "loss_aversion", "raven_total", "risk_pcf", "common_l_pcf", "allais_pcf", "ambiguity_pcf", "common_l_1", "common_l_2", "allais_1", "allais_2", "risk_pcf", "reduction_pcf", "ambiguity_1", "ambiguity_2", "ambiguity_3",  "discount_rate_pcf", "present_discount_rate_pcf", "present_bias_pcf", "risk_1", "overconfidence_1", "overconfidence_2", "end_new_1", "end_new_2", "end_new_3", "end_new", "loss_aversion", "raven_total", "risk", "common_l", "allais", "ambiguity", "reduction", "ambiguity_1", "ambiguity_2", "ambiguity_3", "discount_rate", "present_discount_rate", "present_bias", "risk_1", "risk_2", "risk_3", "end_new_1_i", "end_new_2_i", "end_new_3_i", "loss_aversion_i", "common_l_1_i", "common_l_2_i", "allais_1_i", "allais_2_i", "ambiguity_i", "uncertainty_i", "risk_1_i", "risk_2_i", "risk_3_i", "compound_i", "reduction_i", "reduction_1_i", "reduction_2_i", "reduction_3_i", "b_risk_i", "ambiguity_1_i", "ambiguity_2_i", "ambiguity_3_i", "end_new_i", "present_bias_i", "risk_i", "discount_rate_i", "present_discount_rate_i", "trust", "return", "common_l_i", "allais_i", "compound_1_i", "compound_2_i", "compound_3_i", "anxiety", "depression", "alt_risk_pcf", "alt_risk", "alt_risk_1", "alt_risk_2", "alt_risk_3", "alt_risk_i", "alt_risk_1_i", "alt_risk_2_i", "alt_risk_3_i", "gender", "backwards", ) %>% data.table()
+
+#str(relevant_dat)
+scale_dat <- scale(relevant_dat)
+
+# Normalized data to mean = 0, sd = 1 as was done by the authors of the paper.
+renormalized_dat <- data.table(scale_dat)
+class(renormalized_dat)
+
+```
+
+
+#### Descriptive statistics of features used in Table 4
+```{r}
+tab4_feats <- renormalized_dat %>% select("risk_1_i",
+                                          "common_l_1_i",
+                                          "allais_1_i",
+                                          "end_new_1_i",
+                                          "loss_aversion_i",
+                                          "compound_1_i",
+                                          "raven_total",
+                                          "gender",
+                                          "risk_2_i",
+                                          "risk_3_i",
+                                          "common_l_2_i",
+                                          "allais_2_i",
+                                          "end_new_2_i",
+                                          "end_new_3_i",
+                                          "compound_2_i",
+                                          "compound_3_i")
+
+desc_stats_t4 <- apply(tab4_feats, 2, get_descriptive_stats) %>%
+  data.table(keep.rownames = TRUE)
+
+desc_stats_t4 <- t(desc_stats_t4) %>% data.frame()
+desc_stats_t4 <- desc_stats_t4[-1, ]
+names(desc_stats_t4) <- c("Min.",
+                          "1st Qu.",
+                          "Median",
+                          "Mean",
+                          "3rd Qu.",
+                          "Max.",
+                          "Std. Dev",
+                          "Variance",
+                          "IQR")
+print(desc_stats_t4)
+```
+
+
+#### Running the five separate 2SLS regressions for Table 4
+```{r}
+col1_tab_4_2sls <- ivreg(formula = uncertainty_i ~ risk_1_i +
+                                                   common_l_1_i +
+                                                   allais_1_i +
+                                                   end_new_1_i +
+                                                   loss_aversion_i +
+                                                   raven_total +
+                                                   gender +
+                                                   backwards | raven_total +
+                                                   gender +
+                                                   backwards +
+                                                   risk_2_i +
+                                                   risk_3_i +
+                                                   common_l_2_i +
+                                                   allais_2_i +
+                                                   end_new_2_i +
+                                                   end_new_3_i +
+                                                   loss_aversion_i,
+                                                   data = renormalized_dat)
+summary(col1_tab_4_2sls)
+
+col2_tab_4_2sls <- ivreg(formula = ambiguity_i ~ risk_1_i +
+                                                 common_l_1_i +
+                                                 allais_1_i +
+                                                 end_new_1_i +
+                                                 loss_aversion_i +
+                                                 raven_total +
+                                                 gender +
+                                                 backwards | raven_total +
+                                                 gender +
+                                                 backwards +
+                                                 risk_2_i +
+                                                 risk_3_i +
+                                                 common_l_2_i +
+                                                 allais_2_i +
+                                                 end_new_2_i +
+                                                 end_new_3_i +
+                                                 loss_aversion_i,
+                                                 data = renormalized_dat)
+summary(col2_tab_4_2sls)
+
+col3_tab_4_2sls <- ivreg(formula = compound_i ~ risk_1_i +
+                                                common_l_1_i +
+                                                allais_1_i +
+                                                end_new_1_i +
+                                                loss_aversion_i +
+                                                raven_total +
+                                                gender +
+                                                backwards | raven_total +
+                                                gender +
+                                                backwards +
+                                                risk_2_i +
+                                                risk_3_i +
+                                                common_l_2_i +
+                                                allais_2_i +
+                                                end_new_2_i +
+                                                end_new_3_i +
+                                                loss_aversion_i,
+                                                data = renormalized_dat)
+summary(col3_tab_4_2sls)
+
+col4_tab_4_2sls <- ivreg(formula = reduction_i ~ risk_1_i +
+                                                 common_l_1_i +
+                                                 allais_1_i +
+                                                 end_new_1_i +
+                                                 loss_aversion_i +
+                                                 raven_total +
+                                                 gender +
+                                                 backwards | raven_total +
+                                                 gender +
+                                                 backwards +
+                                                 risk_2_i +
+                                                 risk_3_i +
+                                                 common_l_2_i +
+                                                 allais_2_i +
+                                                 end_new_2_i +
+                                                 end_new_3_i +
+                                                 loss_aversion_i,
+                                                 data = renormalized_dat)
+summary(col4_tab_4_2sls)
+
+col5_tab_4_2sls <- ivreg(formula = ambiguity_i ~ risk_1_i +
+                                                 common_l_1_i +
+                                                 allais_1_i +
+                                                 end_new_1_i +
+                                                 loss_aversion_i +
+                                                 compound_1_i +
+                                                 raven_total +
+                                                 gender +
+                                                 backwards | raven_total +
+                                                 gender +
+                                                 backwards +
+                                                 risk_2_i +
+                                                 risk_3_i +
+                                                 common_l_2_i +
+                                                 allais_2_i +
+                                                 end_new_2_i +
+                                                 end_new_3_i +
+                                                 compound_2_i +
+                                                 compound_3_i +
+                                                 loss_aversion_i,
+                                                 data = renormalized_dat)
+summary(col5_tab_4_2sls)
+# Applied to 2SLS regression, the Wu–Hausman test is a test of endogenity. If all of the regressors are exogenous, then both the OLS and 2SLS estimators are consistent, and the OLS estimator is more efficient, but if one or more regressors are endogenous, then the OLS estimator is inconsistent. A large test statistic and small p-value, as in the example, suggests that the OLS estimator is inconsistent and the 2SLS estimator is therefore to be preferred.
+```
+
+
+#### Table 4 Creation
+```{r}
+col1_coefs <- data.frame(summary(col1_tab_4_2sls)$coefficients[2:9, 1],
+                         summary(col1_tab_4_2sls)$coefficients[2:9, 2])
+col1_new <- col1_coefs[-c(6, 7, 8, 9), ]
+
+col2_coefs <- data.frame(summary(col2_tab_4_2sls)$coefficients[2:9, 1],
+                         summary(col2_tab_4_2sls)$coefficients[2:9, 2])
+col2_new <- col2_coefs[-c(6, 7, 8, 9), ]
+
+col3_coefs <- data.frame(summary(col3_tab_4_2sls)$coefficients[2:9, 1],
+                         summary(col3_tab_4_2sls)$coefficients[2:9, 2])
+col3_new <- col3_coefs[-c(6, 7, 8, 9), ]
+
+col4_coefs <- data.frame(summary(col4_tab_4_2sls)$coefficients[2:9, 1],
+                         summary(col4_tab_4_2sls)$coefficients[2:9, 2])
+col4_new <- col4_coefs[-c(6, 7, 8, 9), ]
+
+col5_coefs <- data.frame(summary(col5_tab_4_2sls)$coefficients[2:10, 1],
+                         summary(col5_tab_4_2sls)$coefficients[2:10, 2])
+col5_new <- col5_coefs[-c(7, 8, 9), ]
+
+col1_stack <- stack(col1_new)
+new_order1 <- c(1, 6, 2, 7, 3, 8, 4, 9, 5, 10)
+setroworder(col1_stack, new_order1)
+col1 <- col1_stack[, -c(2)]
+
+col2_stack <- stack(col2_new)
+new_order2 <- c(1, 6, 2, 7, 3, 8, 4, 9, 5, 10)
+setroworder(col2_stack, new_order2)
+col2 <- col2_stack[, -c(2)]
+
+col3_stack <- stack(col3_new)
+new_order3 <- c(1, 6, 2, 7, 3, 8, 4, 9, 5, 10)
+setroworder(col3_stack, new_order3)
+col3 <- col3_stack[, -c(2)]
+
+col4_stack <- stack(col4_new)
+new_order4 <- c(1, 6, 2, 7, 3, 8, 4, 9, 5, 10)
+setroworder(col4_stack, new_order4)
+col4 <- col4_stack[, -c(2)]
+
+col5_stack <- stack(col5_new)
+new_order5 <- c(1, 7, 2, 8, 3, 9, 4, 10, 5, 11, 6, 12)
+setroworder(col5_stack, new_order5)
+col5 <- col5_stack[, -c(2)]
+
+tab_4 <- data.table(col1, col2, col3, col4, col5)
+tab_4 <- data.frame(tab_4)
+row.names(tab_4) <- c("Risk Aversion",
+                      " ",
+                      "Common Ratio",
+                      "  ",
+                      "Common Conseq.",
+                      "   ",
+                      "Endowment Effect",
+                      "    ",
+                      "Loss Aversion",
+                      "     ",
+                      "Compound Av.",
+                      "      ")
+rnd_tab4 <- round(tab_4, digits = 5)
+
+true_tab4 <- set(rnd_tab4,
+                 i = 11L:12L,
+                 j = 1L:4L,
+                 value = " ")
+true_tab4[is.na(true_tab4)] <- " "
+
+true_tab4[c(2, 4, 6, 8, 10), ] <- paste0("(",
+                                         format(unlist(true_tab4[c(2, 4, 6,
+                                                                   8, 10),
+                                                                 ])),")")
+true_tab4[12, 5] <- paste0("(",format(unlist(true_tab4[12, 5])),")")
+true_tab4[1, 1] <- paste0(format(unlist(true_tab4[1, 1])), "****")
+true_tab4[1, 2] <- paste0(format(unlist(true_tab4[1, 2])), "**")
+true_tab4[1, 3] <- paste0(format(unlist(true_tab4[1, 3])), "****")
+true_tab4[1, 4] <- paste0(format(unlist(true_tab4[1, 4])), "*")
+true_tab4[7, 1] <- paste0(format(unlist(true_tab4[7, 1])), "**")
+true_tab4[7, 2] <- paste0(format(unlist(true_tab4[7, 2])), "**")
+true_tab4[7, 3] <- paste0(format(unlist(true_tab4[7, 3])), "**")
+true_tab4[7, 4] <- paste0(format(unlist(true_tab4[7, 4])), "***")
+true_tab4[11, 5] <- paste0(format(unlist(true_tab4[11, 5])), "****")
+
+names(true_tab4) <- c("Uncertainty Av",
+                      "Ambiguity Av",
+                      "Compound Av",
+                      "Reduction Av",
+                      "Ambiguity Av ")
+
+tab4_gt <- gt(true_tab4,
+              rowname_col = c("Uncertainty Av",
+                              "Ambiguity Av",
+                              "Compound Av",
+                              "Reduction Av",
+                              "Ambiguity Av "),
+              rownames_to_stub = TRUE,
+              auto_align = "FALSE")
+
+tab4_gt <- tab4_gt %>% 
+  tab_header(title = md("**Table S4. Attitudes to Uncertainty and Compound Lotteries**")) %>%
+  opt_align_table_header(align = c("center")) %>%
+  cols_label("Uncertainty Av" = html("(1) <br>Uncertainty Av"),
+             "Ambiguity Av" = html("(2) <br>Ambiguity Av"),
+             "Compound Av" = html("(3) <br>Compound Av"),
+             "Reduction Av" = html("(4) <br>Reduction Av"),
+             "Ambiguity Av " = html("(5) <br>Ambiguity Av")) %>%
+  tab_source_note(source_note = md("2SLS regression. Controls included for gender, order, and intelligence.")) %>%
+  tab_source_note(source_note = md("Standard errors in parentheses")) %>%
+  tab_source_note(source_note = c("* p < 0.10, ** p < 0.05, *** p < 0.01, **** p < 0.001"))
+
+tab4_gt
+
+#tab4_gt %>% gtsave(filename = "tab4_gt_fall_2022.html")
+```
+
+
+#### Checking constant error variance assumption
+```{r}
+library(performance)
+#residuals2 are the residuals from the second stage regression
+plot(col1_tab_4_2sls$fitted.values, col1_tab_4_2sls$residuals2,
+     main = "Col1 of Tabel S4 Std. Residuals vs. Fitted Values",
+     xlab = "Fitted Values",
+     ylab = "Std. Residuals")
+abline(h = 0, col = "red")
+check_heteroskedasticity(col1_tab_4_2sls) # A p-value < 0.05 indicates non-constant variance (heteroskedasticity)
+
+plot(col2_tab_4_2sls$fitted.values, col2_tab_4_2sls$residuals2,
+     main = "Col2 of Tabel S4 Std. Residuals vs. Fitted Values",
+     xlab = "Fitted Values",
+     ylab = "Std. Residuals")
+abline(h = 0, col = "red")
+check_heteroskedasticity(col2_tab_4_2sls)
+
+plot(col3_tab_4_2sls$fitted.values, col3_tab_4_2sls$residuals2,
+     main = "Col3 of Tabel S4 Std. Residuals vs. Fitted Values",
+     xlab = "Fitted Values",
+     ylab = "Std. Residuals")
+abline(h = 0, col = "red")
+check_heteroskedasticity(col3_tab_4_2sls)
+
+plot(col4_tab_4_2sls$fitted.values, col4_tab_4_2sls$residuals2,
+     main = "Col4 of Tabel S4 Std. Residuals vs. Fitted Values",
+     xlab = "Fitted Values",
+     ylab = "Std. Residuals")
+abline(h = 0, col = "red")
+check_heteroskedasticity(col4_tab_4_2sls)
+
+plot(col5_tab_4_2sls$fitted.values, col5_tab_4_2sls$residuals2,
+     main = "Col5 of Tabel S4 Std. Residuals vs. Fitted Values",
+     xlab = "Fitted Values",
+     ylab = "Std. Residuals")
+abline(h = 0, col = "red")
+check_heteroskedasticity(col5_tab_4_2sls)
+
+
+```
+
+
+#### K-fold cross validation - 10 folds
+```{r}
+k <- 10
+folds <- sample(k, length(renormalized_dat$ambiguity_i), replace = TRUE) 
+
+metrics <- matrix(NA, nrow = k, ncol = 2)
+for(i in seq_len(k)){
+
+  is_train <- folds == i
+  head(is_train)
+  is_test <- !is_train
+
+  train_df <- renormalized_dat[is_train, ]
+  test_df <- renormalized_dat[is_test, ]
+
+  mod1 <- ivreg(formula = ambiguity_i ~ risk_1_i +
+                                        common_l_1_i +
+                                        allais_1_i +
+                                        end_new_1_i +
+                                        loss_aversion_i +
+                                        compound_1_i +
+                                        raven_total +
+                                        gender +
+                                        backwards | raven_total +
+                                        gender +
+                                        backwards +
+                                        risk_2_i +
+                                        risk_3_i +
+                                        common_l_2_i +
+                                        allais_2_i +
+                                        end_new_2_i +
+                                        end_new_3_i +
+                                        compound_2_i +
+                                        compound_3_i +
+                                        loss_aversion_i,
+                                        data = renormalized_dat)
+          
+  y_hat <- predict(mod1, newdata = test_df)
+  new_error <- na.omit((test_df$ambiguity_i - y_hat))
+
+  mod2 <- ivreg(formula = ambiguity_i ~ risk_1_i +
+                                        common_l_1_i +
+                                        allais_1_i +
+                                        end_new_1_i +
+                                        loss_aversion_i +
+                                        raven_total +
+                                        gender +
+                                        backwards | raven_total +
+                                        gender +
+                                        backwards +
+                                        risk_2_i +
+                                        risk_3_i +
+                                        common_l_2_i +
+                                        allais_2_i +
+                                        end_new_2_i +
+                                        end_new_3_i +
+                                        loss_aversion_i,
+                                        data = renormalized_dat)
+  y_hat2 <- predict(mod2, newdata = test_df)
+  new_error2 <- na.omit((test_df$ambiguity_i - y_hat2))
+
+  metrics[i, 1] <- sqrt(mean(new_error)^2) # RMSE (Root Mean Squared Error)
+  metrics[i, 2] <- sqrt(mean(new_error2)^2) # RMSE (Root Mean Squared Error)
+}
+
+# Finding that much of the variation is explained by Compound Av, removing Compound Av from the model increases the root mean square error. This suggests that the model with Compound Av is more accurate, as in closer to the the true value of uncertainty_i.
+colnames(metrics) <- c("RMSE with compound av", "RMSE sans compound av")
+comparing_metrics <- apply(metrics, 2, mean)
+print(comparing_metrics)
+```
